@@ -144,33 +144,34 @@
   function buzz() {
     if (navigator.vibrate) { try { navigator.vibrate(LEVEL.vibrate[level]); } catch (e) {} }
   }
-  // iOS Taptic overlay: a real (invisible) switch control the finger actually
-  // toggles. Safari plays the native switch haptic on every toggle.
+  // iOS Taptic overlay. The thing the finger touches is a LABEL, never the
+  // switch itself: a native switch owns its drag gesture on iOS regardless of
+  // touch-action, so a full-size switch under the thumb ate every page scroll
+  // that started on it. The label is an ordinary element — swipes scroll —
+  // and a tap on it toggles the 1px switch parked inside (pointer-events:
+  // none, so it can never capture a gesture) through label activation, which
+  // is still a genuine user gesture, so Safari still plays the Taptic.
   function hapticOverlay() {
+    var label = document.createElement('label');
+    label.setAttribute('aria-hidden', 'true');
+    var ls_ = label.style;
+    ls_.position = 'absolute'; ls_.inset = '0'; ls_.width = '100%'; ls_.height = '100%';
+    ls_.opacity = '0'; ls_.margin = '0'; ls_.cursor = 'pointer'; ls_.zIndex = '9';
+    ls_.touchAction = 'pan-y'; ls_.webkitTapHighlightColor = 'transparent';
     var input = document.createElement('input');
     input.type = 'checkbox';
     input.setAttribute('switch', '');
-    input.setAttribute('aria-hidden', 'true');
     input.tabIndex = -1;
     var st = input.style;
-    st.position = 'absolute'; st.inset = '0'; st.width = '100%'; st.height = '100%';
-    st.opacity = '0'; st.margin = '0'; st.cursor = 'pointer'; st.zIndex = '9';
-    // pan-y, not manipulation: iOS treats a drag that starts on a switch as a
-    // knob drag, which swallowed vertical page scrolls that began on the
-    // phone. pan-y hands vertical pans back to the browser; taps still toggle.
-    st.touchAction = 'pan-y'; st.webkitTapHighlightColor = 'transparent';
-    st.appearance = 'none'; st.webkitAppearance = 'none';
-    // The switch is aria-hidden, so it must never HOLD focus: a pointer tap
-    // focuses even a tabindex=-1 input, and retained focus inside aria-hidden
-    // is a WAI-ARIA violation. The prevention lives on MOUSEDOWN, never
-    // pointerdown: iOS treats a canceled pointerdown as a canceled touchstart
-    // and stops the page from scrolling at all when a swipe starts here
-    // (shipped once, felt immediately). The compatibility mousedown fires
-    // after the touch gesture, so canceling it stops the focus without
-    // touching the pan, and the click that toggles the switch still fires.
-    input.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
+    st.position = 'absolute'; st.width = '1px'; st.height = '1px'; st.opacity = '0';
+    st.margin = '0'; st.pointerEvents = 'none'; st.appearance = 'none'; st.webkitAppearance = 'none';
+    // Focus stays off the hidden control: cancel the compatibility mousedown
+    // (never pointerdown — iOS reads that as a canceled touchstart and stops
+    // scrolling), and blur as the fallback for label-forwarded focus.
+    label.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
     input.addEventListener('focus', function () { input.blur(); });
-    return input;
+    label.appendChild(input);
+    return label;
   }
 
   // Small controls get the same Taptic treatment as the surface: an invisible
@@ -194,7 +195,9 @@
     }
     place();
     if ('ResizeObserver' in window) new ResizeObserver(place).observe(btn);
-    sw.addEventListener('click', function () { btn.click(); });
+    // A label click re-dispatches on the inner switch and bubbles back up;
+    // forward only the original label hit or the button would fire twice.
+    sw.addEventListener('click', function (ev) { if (ev.target !== sw) return; btn.click(); });
     parent.appendChild(sw);
   }
 
