@@ -162,10 +162,13 @@
     st.appearance = 'none'; st.webkitAppearance = 'none';
     // The switch is aria-hidden, so it must never HOLD focus: a pointer tap
     // focuses even a tabindex=-1 input, and retained focus inside aria-hidden
-    // is a WAI-ARIA violation the browser rightly flags. Preventing the
-    // pointerdown default stops the focus (the click, and with it the toggle
-    // and the Taptic, still fires); the blur is the belt to that suspender.
-    input.addEventListener('pointerdown', function (ev) { ev.preventDefault(); });
+    // is a WAI-ARIA violation. The prevention lives on MOUSEDOWN, never
+    // pointerdown: iOS treats a canceled pointerdown as a canceled touchstart
+    // and stops the page from scrolling at all when a swipe starts here
+    // (shipped once, felt immediately). The compatibility mousedown fires
+    // after the touch gesture, so canceling it stops the focus without
+    // touching the pan, and the click that toggles the switch still fires.
+    input.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
     input.addEventListener('focus', function () { input.blur(); });
     return input;
   }
