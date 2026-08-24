@@ -366,6 +366,13 @@ h3 { font-size: 1.35rem; letter-spacing: -0.015em; }
   max-height: 320px; overflow: auto;
 }
 .langs__menu a { font-size: 0.9rem; padding: 5px 8px; border-radius: 8px; text-decoration: none; color: var(--sand-700); }
+@media (max-width: 640px) {
+  /* 3 columns of 45 names outgrow a phone; pin the sheet to the viewport */
+  .langs__menu {
+    position: fixed; inset-inline-start: auto; left: 14px; right: 14px; bottom: 72px;
+    grid-template-columns: repeat(2, 1fr); max-height: 55vh;
+  }
+}
 .langs__menu a:hover { background: var(--sand-100); color: var(--ink); }
 .langs__menu a[aria-current] { color: var(--tang); font-weight: 700; }
 

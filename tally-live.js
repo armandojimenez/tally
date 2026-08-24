@@ -155,9 +155,37 @@
     var st = input.style;
     st.position = 'absolute'; st.inset = '0'; st.width = '100%'; st.height = '100%';
     st.opacity = '0'; st.margin = '0'; st.cursor = 'pointer'; st.zIndex = '9';
-    st.touchAction = 'manipulation'; st.webkitTapHighlightColor = 'transparent';
+    // pan-y, not manipulation: iOS treats a drag that starts on a switch as a
+    // knob drag, which swallowed vertical page scrolls that began on the
+    // phone. pan-y hands vertical pans back to the browser; taps still toggle.
+    st.touchAction = 'pan-y'; st.webkitTapHighlightColor = 'transparent';
     st.appearance = 'none'; st.webkitAppearance = 'none';
     return input;
+  }
+
+  // Small controls get the same Taptic treatment as the surface: an invisible
+  // switch riding the button, toggled by the user's own tap. Touch devices
+  // only — a mouse gets the button's hover/active states instead, and cannot
+  // feel a haptic anyway. The button's own click handler still does the work
+  // (the switch forwards it), so keyboard and desktop paths are unchanged.
+  var COARSE = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  function addTapHaptic(btn) {
+    if (!COARSE || !btn) return;
+    var parent = btn.parentNode;
+    if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+    var sw = hapticOverlay();
+    sw.style.zIndex = '3';
+    function place() {
+      sw.style.inset = 'auto';
+      sw.style.left = btn.offsetLeft + 'px';
+      sw.style.top = btn.offsetTop + 'px';
+      sw.style.width = btn.offsetWidth + 'px';
+      sw.style.height = btn.offsetHeight + 'px';
+    }
+    place();
+    if ('ResizeObserver' in window) new ResizeObserver(place).observe(btn);
+    sw.addEventListener('click', function () { btn.click(); });
+    parent.appendChild(sw);
   }
 
   // ── the phone ────────────────────────────────────────────────────────────
@@ -247,7 +275,7 @@
     var tapBtn = document.createElement('button');
     tapBtn.type = 'button';
     tapBtn.setAttribute('aria-label', (S.tapLabel || 'Add one') + '. ' + (S.countLabel || 'Current count') + ' ' + state.count);
-    Object.assign(tapBtn.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', background: 'transparent', border: '0', padding: '0', zIndex: '8', touchAction: 'manipulation', webkitTapHighlightColor: 'transparent', cursor: 'pointer', borderRadius: '0' });
+    Object.assign(tapBtn.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', background: 'transparent', border: '0', padding: '0', zIndex: '8', touchAction: 'pan-y', webkitTapHighlightColor: 'transparent', cursor: 'pointer', borderRadius: '0' });
     refs.tapBtn = tapBtn;
     surface.append(tapBtn, hapticOverlay());
     root.append(surface);
@@ -483,13 +511,15 @@
         clickSound(THEMES[state.theme].click, 1);
         buzz();
       });
+      addTapHaptic(b);
     });
   }
 
   // ── multi cards: tap a plus to count that row ────────────────────────────
   document.querySelectorAll('[data-multi] .mcard').forEach(function (card) {
     var num = card.querySelector('[data-mcount]');
-    card.querySelector('.mcard__plus').addEventListener('click', function () {
+    var plus = card.querySelector('.mcard__plus');
+    plus.addEventListener('click', function () {
       num.textContent = String(Number(num.textContent) + 1);
       if (!REDUCED) {
         num.classList.remove('pop');
@@ -499,6 +529,7 @@
       clickSound(THEMES.modern.click, 0.9);
       buzz();
     });
+    addTapHaptic(plus);
   });
 
   // ── customize sheet: live recolor ────────────────────────────────────────
