@@ -444,27 +444,43 @@
   buildPhone();
   render(false);
 
-  // The count fires on pointer-down, like the app. On the web the page can
-  // turn that same gesture into a SCROLL — the browser then fires
-  // pointercancel, and the count that touch charged is silently taken back.
-  var chargedPointer = null;
+  // A mouse counts on pointer-down, like the app. A FINGER counts on lift:
+  // the page underneath scrolls, so a touch is only a tap once it ends
+  // without moving — counting at down showed a 1→0 flicker on every scroll
+  // (count, then the pointercancel revert). Committing at up keeps scrolls
+  // off the number entirely, and lines the count up with the iOS Taptic,
+  // which the switch overlay plays at lift anyway.
+  var touchPointer = null;
+  var touchX = 0;
+  var touchY = 0;
+  function onSurface(ev) {
+    var r = refs.surface.getBoundingClientRect();
+    if (ev.clientY < r.top || ev.clientY > r.bottom || ev.clientX < r.left || ev.clientX > r.right) return null;
+    return r;
+  }
   mount.addEventListener('pointerdown', function (ev) {
     if (ev.target.closest('[data-live], .sound-chip')) return;
-    var r = refs.surface.getBoundingClientRect();
-    if (ev.clientY < r.top || ev.clientY > r.bottom || ev.clientX < r.left || ev.clientX > r.right) return;
+    var r = onSurface(ev);
+    if (!r) return;
     pressFace(true);
-    chargedPointer = ev.pointerId;
-    addOne(((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100);
-  });
-  mount.addEventListener('pointerup', function () { chargedPointer = null; pressFace(false); });
-  mount.addEventListener('pointerleave', function () { pressFace(false); });
-  mount.addEventListener('pointercancel', function (ev) {
-    pressFace(false);
-    if (chargedPointer !== null && ev.pointerId === chargedPointer) {
-      chargedPointer = null;
-      if (state.count > 0) { state.count -= 1; render(false); }
+    if (ev.pointerType === 'mouse') {
+      addOne(((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100);
+      return;
     }
+    touchPointer = ev.pointerId;
+    touchX = ev.clientX;
+    touchY = ev.clientY;
   });
+  mount.addEventListener('pointerup', function (ev) {
+    pressFace(false);
+    if (touchPointer === null || ev.pointerId !== touchPointer) return;
+    touchPointer = null;
+    if (Math.hypot(ev.clientX - touchX, ev.clientY - touchY) > 12) return;
+    var r = onSurface(ev);
+    if (r) addOne(((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100);
+  });
+  mount.addEventListener('pointerleave', function () { pressFace(false); });
+  mount.addEventListener('pointercancel', function () { touchPointer = null; pressFace(false); });
   // keyboard activation of the tap layer (click with no pointer coords)
   mount.addEventListener('click', function (ev) {
     if (ev.target === refs.tapBtn && ev.detail === 0) addOne(50, 46);
