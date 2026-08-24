@@ -160,6 +160,13 @@
     // phone. pan-y hands vertical pans back to the browser; taps still toggle.
     st.touchAction = 'pan-y'; st.webkitTapHighlightColor = 'transparent';
     st.appearance = 'none'; st.webkitAppearance = 'none';
+    // The switch is aria-hidden, so it must never HOLD focus: a pointer tap
+    // focuses even a tabindex=-1 input, and retained focus inside aria-hidden
+    // is a WAI-ARIA violation the browser rightly flags. Preventing the
+    // pointerdown default stops the focus (the click, and with it the toggle
+    // and the Taptic, still fires); the blur is the belt to that suspender.
+    input.addEventListener('pointerdown', function (ev) { ev.preventDefault(); });
+    input.addEventListener('focus', function () { input.blur(); });
     return input;
   }
 
