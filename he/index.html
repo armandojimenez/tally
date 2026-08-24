@@ -1,12 +1,11 @@
 <!doctype html>
-<html lang="he" dir="rtl" data-app-slug="tally" data-langs="en,ar,bn,ca,cs,da,de,el,es,fa,fi,fr,gu,he,hi,hr,hu,id,it,ja,kn,ko,ml,mr,ms,nb,nl,or,pa,pl,pt,pt-br,ro,ru,sk,sv,ta,te,th,tr,uk,ur,vi,zh,zh-hant">
+<html lang="he" dir="rtl" data-app-slug="tally" data-langs="ar,bn,ca,cs,da,de,el,en,es,fa,fi,fr,gu,he,hi,hr,hu,id,it,ja,kn,ko,ml,mr,ms,nb,nl,or,pa,pl,pt-br,pt,ro,ru,sk,sv,ta,te,th,tr,uk,ur,vi,zh-hant,zh">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tally: מונה לאייפון ולאנדרואיד</title>
   <meta name="description" content="מונה עם כפתור ענק אחד. מקישים בכל מקום, העיניים נשארות על מה שאתם עושים, וכל ספירה נוחתת בקליק חד. חזרות, שורות, הקפות, תפרים, ראשים, ספירת העומר.">
   <link rel="canonical" href="https://armandojimenez.dev/tally/he/">
-  <link rel="alternate" hreflang="en" href="https://armandojimenez.dev/tally/">
   <link rel="alternate" hreflang="ar" href="https://armandojimenez.dev/tally/ar/">
   <link rel="alternate" hreflang="bn" href="https://armandojimenez.dev/tally/bn/">
   <link rel="alternate" hreflang="ca" href="https://armandojimenez.dev/tally/ca/">
@@ -14,6 +13,7 @@
   <link rel="alternate" hreflang="da" href="https://armandojimenez.dev/tally/da/">
   <link rel="alternate" hreflang="de" href="https://armandojimenez.dev/tally/de/">
   <link rel="alternate" hreflang="el" href="https://armandojimenez.dev/tally/el/">
+  <link rel="alternate" hreflang="en" href="https://armandojimenez.dev/tally/">
   <link rel="alternate" hreflang="es" href="https://armandojimenez.dev/tally/es/">
   <link rel="alternate" hreflang="fa" href="https://armandojimenez.dev/tally/fa/">
   <link rel="alternate" hreflang="fi" href="https://armandojimenez.dev/tally/fi/">
@@ -36,8 +36,8 @@
   <link rel="alternate" hreflang="or" href="https://armandojimenez.dev/tally/or/">
   <link rel="alternate" hreflang="pa" href="https://armandojimenez.dev/tally/pa/">
   <link rel="alternate" hreflang="pl" href="https://armandojimenez.dev/tally/pl/">
-  <link rel="alternate" hreflang="pt" href="https://armandojimenez.dev/tally/pt/">
   <link rel="alternate" hreflang="pt-BR" href="https://armandojimenez.dev/tally/pt-br/">
+  <link rel="alternate" hreflang="pt" href="https://armandojimenez.dev/tally/pt/">
   <link rel="alternate" hreflang="ro" href="https://armandojimenez.dev/tally/ro/">
   <link rel="alternate" hreflang="ru" href="https://armandojimenez.dev/tally/ru/">
   <link rel="alternate" hreflang="sk" href="https://armandojimenez.dev/tally/sk/">
@@ -49,8 +49,8 @@
   <link rel="alternate" hreflang="uk" href="https://armandojimenez.dev/tally/uk/">
   <link rel="alternate" hreflang="ur" href="https://armandojimenez.dev/tally/ur/">
   <link rel="alternate" hreflang="vi" href="https://armandojimenez.dev/tally/vi/">
-  <link rel="alternate" hreflang="zh-Hans" href="https://armandojimenez.dev/tally/zh/">
   <link rel="alternate" hreflang="zh-Hant" href="https://armandojimenez.dev/tally/zh-hant/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://armandojimenez.dev/tally/zh/">
   <link rel="alternate" hreflang="x-default" href="https://armandojimenez.dev/tally/">
   <meta name="apple-itunes-app" content="app-id=6804052411">
   <meta property="og:type" content="website">
@@ -72,7 +72,7 @@
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="preload" href="../assets/fonts/SpaceGrotesk-Bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/SpaceGrotesk-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../style.css?v=20e3ff5e">
+  <link rel="stylesheet" href="../style.css?v=91101ed7">
   <script type="application/ld+json">
 {
  "@context": "https://schema.org",
@@ -199,6 +199,7 @@
             <button class="intensity__opt is-on" type="button" data-level="1" aria-pressed="true">בינונית</button>
             <button class="intensity__opt" type="button" data-level="2" aria-pressed="false">חזקה</button>
           </div>
+          <div class="sonar" data-sonar aria-hidden="true"><span class="sonar__core"></span></div>
           <p class="feel__note">בחרו קליק שמרגישים גם דרך כפפות, או כזה שבקושי מרגישים בכלל.</p>
         </div>
       </div>
@@ -267,56 +268,59 @@
         <p class="eyebrow"><svg class="eyebrow__mark" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8.5" stroke-linecap="round" aria-hidden="true"><path d="M28 26v48M44 26v48M60 26v48M76 26v48"/><path d="M20 70L84 30"/></svg><span>ערכות נושא</span></p>
         <h2><span class="hl"><span class="sw">שמונה<i aria-hidden="true"></i></span> דרכים</span><span class="hl">לראות מספר.</span></h2>
         <p class="band__body band__body--center">מודרני, מינימלי, גרדיאנט, חמוד, רטרו, 8-ביט, ארקייד ועיתונאי. כל אחת משנה את הספרות, את הצבעים ואת צליל הקליק עצמו.</p>
-        <div class="minis" data-minis>
-        <button class="mini" type="button" data-theme="modern" aria-label="מודרני">
+        <div class="themes__lab">
+          <div class="tstage"><div class="tstage__screen" data-stage></div></div>
+          <div class="minis" data-minis>
+        <button class="mini" type="button" data-theme="modern" aria-pressed="false" aria-label="מודרני">
           <span class="mini__face" style="background:#F4F3EF">
             <span class="mini__num" aria-hidden="true" style="color:#16151A;font-family:'Space Grotesk',sans-serif;font-weight:700;">128</span>
           </span>
           <span class="mini__name">מודרני</span>
         </button>
-        <button class="mini" type="button" data-theme="mono" aria-label="מינימלי">
+        <button class="mini" type="button" data-theme="mono" aria-pressed="false" aria-label="מינימלי">
           <span class="mini__face" style="background:#FCFCFB">
             <span class="mini__num" aria-hidden="true" style="color:#101010;font-family:'Space Grotesk',sans-serif;font-weight:300;">47</span>
           </span>
           <span class="mini__name">מינימלי</span>
         </button>
-        <button class="mini" type="button" data-theme="gradient" aria-label="גרדיאנט">
+        <button class="mini" type="button" data-theme="gradient" aria-pressed="false" aria-label="גרדיאנט">
           <span class="mini__face" style="background:linear-gradient(160deg,#7C3AED 0%,#DB2777 45%,#F97316 100%)">
             <span class="mini__num" aria-hidden="true" style="color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:700;">16</span>
           </span>
           <span class="mini__name">גרדיאנט</span>
         </button>
-        <button class="mini" type="button" data-theme="cute" aria-label="חמוד">
+        <button class="mini" type="button" data-theme="cute" aria-pressed="false" aria-label="חמוד">
           <span class="mini__face" style="background:radial-gradient(circle at 50% 52%, #FF9DC8 0%, #FF6FAE 33%, transparent 34%), linear-gradient(165deg,#FFE3F1 0%,#EDE7FF 100%)">
             <span class="mini__num" aria-hidden="true" style="color:#fff;font-family:'Baloo 2','Space Grotesk',sans-serif;font-weight:800;text-shadow:0 3px 0 rgba(214,102,163,0.35);">7</span>
           </span>
           <span class="mini__name">חמוד</span>
         </button>
-        <button class="mini" type="button" data-theme="retro" aria-label="רטרו">
+        <button class="mini" type="button" data-theme="retro" aria-pressed="false" aria-label="רטרו">
           <span class="mini__face" style="background:#EFE2C6">
             <span class="mini__num" aria-hidden="true" style="color:#3A2A18;font-family:'Space Mono',monospace;font-weight:700;">42</span>
           </span>
           <span class="mini__name">רטרו</span>
         </button>
-        <button class="mini" type="button" data-theme="pixel" aria-label="8-ביט">
+        <button class="mini" type="button" data-theme="pixel" aria-pressed="false" aria-label="8-ביט">
           <span class="mini__face" style="background:#12131E">
             <span class="mini__num" aria-hidden="true" style="color:#8BF13C;font-family:'Press Start 2P','Space Grotesk',sans-serif;font-weight:400;font-size:22px;text-shadow:2px 2px 0 #2a6b0f;">88</span>
           </span>
           <span class="mini__name">8-ביט</span>
         </button>
-        <button class="mini" type="button" data-theme="gaming" aria-label="ארקייד">
+        <button class="mini" type="button" data-theme="gaming" aria-pressed="false" aria-label="ארקייד">
           <span class="mini__face" style="background:radial-gradient(circle at 50% 30%,#14163A 0%,#07060F 70%)">
             <span class="mini__num" aria-hidden="true" style="color:#00F0FF;font-family:'Orbitron','Space Grotesk',sans-serif;font-weight:900;text-shadow:0 0 10px rgba(0,240,255,0.9);">303</span>
           </span>
           <span class="mini__name">ארקייד</span>
         </button>
-        <button class="mini" type="button" data-theme="art" aria-label="עיתונאי">
+        <button class="mini" type="button" data-theme="art" aria-pressed="false" aria-label="עיתונאי">
           <span class="mini__face" style="background:#EDE9E0">
             <span class="mini__strip" style="background:#FF3B14" aria-hidden="true"></span>
             <span class="mini__num" aria-hidden="true" style="color:#16151A;font-family:'Anton','Space Grotesk',sans-serif;font-weight:400;font-size:46px;">9</span>
           </span>
           <span class="mini__name">עיתונאי</span>
         </button>
+          </div>
         </div>
         <p class="try-note try-note--center">הקישו על ערכה, והטלפון מתלבש בה.</p>
       </div>
@@ -462,7 +466,7 @@
       </nav>
         <details class="langs">
           <summary>שפות</summary>
-          <div class="langs__menu"><a href="https://armandojimenez.dev/tally/" hreflang="en">English</a><a href="https://armandojimenez.dev/tally/ar/" hreflang="ar">العربية</a><a href="https://armandojimenez.dev/tally/bn/" hreflang="bn">বাংলা</a><a href="https://armandojimenez.dev/tally/ca/" hreflang="ca">Català</a><a href="https://armandojimenez.dev/tally/cs/" hreflang="cs">Čeština</a><a href="https://armandojimenez.dev/tally/da/" hreflang="da">Dansk</a><a href="https://armandojimenez.dev/tally/de/" hreflang="de">Deutsch</a><a href="https://armandojimenez.dev/tally/el/" hreflang="el">Ελληνικά</a><a href="https://armandojimenez.dev/tally/es/" hreflang="es">Español</a><a href="https://armandojimenez.dev/tally/fa/" hreflang="fa">فارسی</a><a href="https://armandojimenez.dev/tally/fi/" hreflang="fi">Suomi</a><a href="https://armandojimenez.dev/tally/fr/" hreflang="fr">Français</a><a href="https://armandojimenez.dev/tally/gu/" hreflang="gu">ગુજરાતી</a><a href="https://armandojimenez.dev/tally/he/" aria-current="true" hreflang="he">עברית</a><a href="https://armandojimenez.dev/tally/hi/" hreflang="hi">हिन्दी</a><a href="https://armandojimenez.dev/tally/hr/" hreflang="hr">Hrvatski</a><a href="https://armandojimenez.dev/tally/hu/" hreflang="hu">Magyar</a><a href="https://armandojimenez.dev/tally/id/" hreflang="id">Bahasa Indonesia</a><a href="https://armandojimenez.dev/tally/it/" hreflang="it">Italiano</a><a href="https://armandojimenez.dev/tally/ja/" hreflang="ja">日本語</a><a href="https://armandojimenez.dev/tally/kn/" hreflang="kn">ಕನ್ನಡ</a><a href="https://armandojimenez.dev/tally/ko/" hreflang="ko">한국어</a><a href="https://armandojimenez.dev/tally/ml/" hreflang="ml">മലയാളം</a><a href="https://armandojimenez.dev/tally/mr/" hreflang="mr">मराठी</a><a href="https://armandojimenez.dev/tally/ms/" hreflang="ms">Bahasa Melayu</a><a href="https://armandojimenez.dev/tally/nb/" hreflang="nb">Norsk</a><a href="https://armandojimenez.dev/tally/nl/" hreflang="nl">Nederlands</a><a href="https://armandojimenez.dev/tally/or/" hreflang="or">ଓଡ଼ିଆ</a><a href="https://armandojimenez.dev/tally/pa/" hreflang="pa">ਪੰਜਾਬੀ</a><a href="https://armandojimenez.dev/tally/pl/" hreflang="pl">Polski</a><a href="https://armandojimenez.dev/tally/pt/" hreflang="pt">Português (Portugal)</a><a href="https://armandojimenez.dev/tally/pt-br/" hreflang="pt-BR">Português (Brasil)</a><a href="https://armandojimenez.dev/tally/ro/" hreflang="ro">Română</a><a href="https://armandojimenez.dev/tally/ru/" hreflang="ru">Русский</a><a href="https://armandojimenez.dev/tally/sk/" hreflang="sk">Slovenčina</a><a href="https://armandojimenez.dev/tally/sv/" hreflang="sv">Svenska</a><a href="https://armandojimenez.dev/tally/ta/" hreflang="ta">தமிழ்</a><a href="https://armandojimenez.dev/tally/te/" hreflang="te">తెలుగు</a><a href="https://armandojimenez.dev/tally/th/" hreflang="th">ไทย</a><a href="https://armandojimenez.dev/tally/tr/" hreflang="tr">Türkçe</a><a href="https://armandojimenez.dev/tally/uk/" hreflang="uk">Українська</a><a href="https://armandojimenez.dev/tally/ur/" hreflang="ur">اردو</a><a href="https://armandojimenez.dev/tally/vi/" hreflang="vi">Tiếng Việt</a><a href="https://armandojimenez.dev/tally/zh/" hreflang="zh-Hans">简体中文</a><a href="https://armandojimenez.dev/tally/zh-hant/" hreflang="zh-Hant">繁體中文</a></div>
+          <div class="langs__menu"><a href="https://armandojimenez.dev/tally/ar/" hreflang="ar">العربية</a><a href="https://armandojimenez.dev/tally/bn/" hreflang="bn">বাংলা</a><a href="https://armandojimenez.dev/tally/ca/" hreflang="ca">Català</a><a href="https://armandojimenez.dev/tally/cs/" hreflang="cs">Čeština</a><a href="https://armandojimenez.dev/tally/da/" hreflang="da">Dansk</a><a href="https://armandojimenez.dev/tally/de/" hreflang="de">Deutsch</a><a href="https://armandojimenez.dev/tally/el/" hreflang="el">Ελληνικά</a><a href="https://armandojimenez.dev/tally/" hreflang="en">English</a><a href="https://armandojimenez.dev/tally/es/" hreflang="es">Español</a><a href="https://armandojimenez.dev/tally/fa/" hreflang="fa">فارسی</a><a href="https://armandojimenez.dev/tally/fi/" hreflang="fi">Suomi</a><a href="https://armandojimenez.dev/tally/fr/" hreflang="fr">Français</a><a href="https://armandojimenez.dev/tally/gu/" hreflang="gu">ગુજરાતી</a><a href="https://armandojimenez.dev/tally/he/" aria-current="true" hreflang="he">עברית</a><a href="https://armandojimenez.dev/tally/hi/" hreflang="hi">हिन्दी</a><a href="https://armandojimenez.dev/tally/hr/" hreflang="hr">Hrvatski</a><a href="https://armandojimenez.dev/tally/hu/" hreflang="hu">Magyar</a><a href="https://armandojimenez.dev/tally/id/" hreflang="id">Bahasa Indonesia</a><a href="https://armandojimenez.dev/tally/it/" hreflang="it">Italiano</a><a href="https://armandojimenez.dev/tally/ja/" hreflang="ja">日本語</a><a href="https://armandojimenez.dev/tally/kn/" hreflang="kn">ಕನ್ನಡ</a><a href="https://armandojimenez.dev/tally/ko/" hreflang="ko">한국어</a><a href="https://armandojimenez.dev/tally/ml/" hreflang="ml">മലയാളം</a><a href="https://armandojimenez.dev/tally/mr/" hreflang="mr">मराठी</a><a href="https://armandojimenez.dev/tally/ms/" hreflang="ms">Bahasa Melayu</a><a href="https://armandojimenez.dev/tally/nb/" hreflang="nb">Norsk</a><a href="https://armandojimenez.dev/tally/nl/" hreflang="nl">Nederlands</a><a href="https://armandojimenez.dev/tally/or/" hreflang="or">ଓଡ଼ିଆ</a><a href="https://armandojimenez.dev/tally/pa/" hreflang="pa">ਪੰਜਾਬੀ</a><a href="https://armandojimenez.dev/tally/pl/" hreflang="pl">Polski</a><a href="https://armandojimenez.dev/tally/pt-br/" hreflang="pt-BR">Português (Brasil)</a><a href="https://armandojimenez.dev/tally/pt/" hreflang="pt">Português (Portugal)</a><a href="https://armandojimenez.dev/tally/ro/" hreflang="ro">Română</a><a href="https://armandojimenez.dev/tally/ru/" hreflang="ru">Русский</a><a href="https://armandojimenez.dev/tally/sk/" hreflang="sk">Slovenčina</a><a href="https://armandojimenez.dev/tally/sv/" hreflang="sv">Svenska</a><a href="https://armandojimenez.dev/tally/ta/" hreflang="ta">தமிழ்</a><a href="https://armandojimenez.dev/tally/te/" hreflang="te">తెలుగు</a><a href="https://armandojimenez.dev/tally/th/" hreflang="th">ไทย</a><a href="https://armandojimenez.dev/tally/tr/" hreflang="tr">Türkçe</a><a href="https://armandojimenez.dev/tally/uk/" hreflang="uk">Українська</a><a href="https://armandojimenez.dev/tally/ur/" hreflang="ur">اردو</a><a href="https://armandojimenez.dev/tally/vi/" hreflang="vi">Tiếng Việt</a><a href="https://armandojimenez.dev/tally/zh-hant/" hreflang="zh-Hant">繁體中文</a><a href="https://armandojimenez.dev/tally/zh/" hreflang="zh-Hans">简体中文</a></div>
         </details>
       <p class="footer__copy">© 2026 Armando Jimenez</p>
     </div>
@@ -470,7 +474,7 @@
 
   <div class="snackbar" role="status" aria-live="polite"></div>
   <script>window.TALLY_STRINGS = {"phone":{"counterName":"חזרות","hintByTheme":{"modern":"הקישו בכל מקום","gradient":"הקישו כדי לספור","cute":"בופ!","gaming":"לחצו"},"undo":"בטל","reset":"איפוס","push":"לחץ","score":"ניקוד","soundOn":"צליל הקליק פועל","soundOff":"צליל הקליק כבוי","tapLabel":"הוספת אחד","countLabel":"הספירה כעת"},"copied":"הכתובת הועתקה."};</script>
-  <script src="../behavior.js?v=20e3ff5e"></script>
-  <script src="../tally-live.js?v=20e3ff5e"></script>
+  <script src="../behavior.js?v=91101ed7"></script>
+  <script src="../tally-live.js?v=91101ed7"></script>
 </body>
 </html>

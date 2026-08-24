@@ -9,6 +9,9 @@
 //     ios-haptics package uses; no library needed)
 //   • Android: navigator.vibrate, scaled by the chosen click intensity
 //   • everywhere: a short synthesized click per theme, WebAudio, muteable
+//   • intensity is DRAWN, not faked: iOS has exactly one Taptic pattern for a
+//     switch toggle, so the Light/Medium/Heavy pills answer with a sonar pulse
+//   • the themes band carries a second live surface, so a skin lands in place
 //
 // Every visual token is verbatim from the recreated design system
 // (tally-screenshots/src/lib/appui.js ← design/Tally.dc.html THEMES).
@@ -103,7 +106,21 @@
 
   // ── feedback: sound + haptics ────────────────────────────────────────────
   var audio = { ctx: null, muted: false };
-  var LEVEL = { gain: [0.05, 0.1, 0.17], vibrate: [6, 12, 26] };
+  // Light / Medium / Heavy. Android really does differ (navigator.vibrate,
+  // 6/12/26ms) and so does the click's gain — but iOS cannot: a switch toggle
+  // plays exactly ONE Taptic pattern, and every web-haptics library rides that
+  // same switch, so no library can grade it. Rather than fake three identical
+  // buzzes, the intensity is drawn: a sonar pulse whose reach, ring count,
+  // weight and decay carry the difference on every device.
+  var LEVEL = {
+    gain: [0.05, 0.1, 0.17],
+    vibrate: [6, 12, 26],
+    sonar: [
+      { rings: 1, reach: 124, dur: 620, w: 2, o: 0.62, core: 1.35 },
+      { rings: 2, reach: 208, dur: 740, w: 3, o: 0.75, core: 1.75 },
+      { rings: 3, reach: 320, dur: 900, w: 4.5, o: 0.9, core: 2.3 },
+    ],
+  };
   var level = 1; // Light / Medium / Heavy — Medium by default, like the app
   function clickSound(spec, gainMul) {
     if (audio.muted) return;
@@ -143,6 +160,51 @@
   }
   function buzz() {
     if (navigator.vibrate) { try { navigator.vibrate(LEVEL.vibrate[level]); } catch (e) {} }
+  }
+  // The intensity you can see: rings leave the core and die at a distance the
+  // chosen level sets. Heavy overruns the scope on purpose.
+  var sonarScope = document.querySelector('[data-sonar]');
+  function sonarPulse() {
+    if (!sonarScope) return;
+    var s = LEVEL.sonar[level];
+    var mkRing = function () {
+      var ring = el('span', {
+        width: s.reach + 'px', height: s.reach + 'px',
+        marginLeft: -s.reach / 2 + 'px', marginTop: -s.reach / 2 + 'px',
+        borderWidth: s.w + 'px',
+      });
+      ring.className = 'sonar__ring';
+      sonarScope.append(ring);
+      return ring;
+    };
+    if (REDUCED) {
+      // Motion off, meaning intact: the scope holds ONE still ring at the
+      // chosen level's reach, so the picker still says what it picked.
+      sonarScope.querySelectorAll('.sonar__ring').forEach(function (r) { r.remove(); });
+      mkRing().style.opacity = String(s.o * 0.8);
+      return;
+    }
+    var mk = function (i) {
+      var ring = mkRing();
+      // Two animations, on purpose: one easing cannot serve both properties.
+      // Sharing the ease-out curve fades the ring to nothing by the time it is
+      // a third of the way out — the reach stops reading, which is the whole
+      // point of the pulse. The travel keeps the ease; the fade runs linear.
+      ring.animate(
+        [{ transform: 'scale(0.06)' }, { transform: 'scale(1)' }],
+        { duration: s.dur, delay: i * 110, easing: 'cubic-bezier(0.16, 0.7, 0.3, 1)', fill: 'backwards' }
+      );
+      ring.animate(
+        [{ opacity: s.o, offset: 0 }, { opacity: s.o * 0.9, offset: 0.45 }, { opacity: 0, offset: 1 }],
+        { duration: s.dur, delay: i * 110, fill: 'backwards' }
+      ).onfinish = function () { ring.remove(); };
+    };
+    for (var i = 0; i < s.rings; i++) mk(i);
+    var core = sonarScope.querySelector('.sonar__core');
+    if (core) core.animate(
+      [{ transform: 'scale(1)' }, { transform: 'scale(' + s.core + ')' }, { transform: 'scale(1)' }],
+      { duration: Math.round(s.dur * 0.55), easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' }
+    );
   }
   // iOS Taptic overlay. The thing the finger touches is a LABEL, never the
   // switch itself: a native switch owns its drag gesture on iOS regardless of
@@ -205,26 +267,17 @@
   var mount = document.getElementById('live-phone');
   if (!mount) return;
   var state = { count: 0, theme: 'modern' };
-  var refs = {};
+  var refs = {};            // the hero phone
+  var stageMount = document.querySelector('[data-stage]');
+  var stage = stageMount ? {} : null;  // the themes-band preview screen
 
   var digitScale = function (count) {
     var d = String(count).length;
     return d >= 6 ? 0.5 : d >= 5 ? 0.62 : d >= 4 ? 0.78 : 1;
   };
 
-  function buildPhone() {
-    var v = THEMES[state.theme];
-    mount.textContent = '';
-
-    var frame = el('div', null); frame.className = 'phone__frame';
-    var screen = el('div', null); screen.className = 'phone__screen';
-    screen.style.background = v.screenBg;
-    var logical = el('div', null); logical.className = 'phone__logical';
-    logical.style.webkitTouchCallout = 'none';
-
-    var root = el('div', { position: 'absolute', inset: '0', background: v.bg, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' });
-
-    // deco layers (verbatim recipes)
+  // deco layers (verbatim recipes) — the hero phone and the stage wear the same
+  function addDeco(v, root) {
     if (v.deco === 'scan') root.append(el('div', { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '1', background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0px, rgba(0,0,0,0.22) 1px, transparent 2px, transparent 4px)', opacity: '0.5' }));
     if (v.deco === 'grid') root.append(
       el('div', { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '1', background: 'linear-gradient(rgba(0,240,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,43,214,0.07) 1px, transparent 1px)', backgroundSize: '34px 34px' }),
@@ -232,38 +285,27 @@
     );
     if (v.deco === 'sun') root.append(el('div', { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '1', background: 'repeating-conic-gradient(from 0deg at 50% 40%, rgba(193,68,14,0.06) 0deg 12deg, transparent 12deg 24deg)' }));
     if (v.deco === 'art') root.append(el('div', { position: 'absolute', left: '0', right: '0', bottom: '0', height: '40%', background: '#FF3B14', zIndex: '1' }));
+  }
 
-    // iOS status bar, 11:11
-    var sColor = v.statusDark ? '#0A0A0A' : '#FFFFFF';
-    var sBar = el('div', { position: 'absolute', top: '0', left: '0', right: '0', height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 40px 0 46px', zIndex: '30', pointerEvents: 'none' });
-    sBar.append(el('div', { fontFamily: UI_FONT, fontWeight: '600', fontSize: '17px', letterSpacing: '0.2px', color: sColor }, '11:11'), statusBarSvg(sColor));
-    root.append(sBar);
-
-    // top bar: menu · name · edit
-    var bar = el('div', { position: 'relative', zIndex: '5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', height: '50px', marginTop: '58px' });
-    bar.append(
-      el('div', { width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }, menuIcon(v.chrome)),
-      el('div', { fontFamily: UI_FONT, fontSize: '15px', fontWeight: '600', color: v.chrome, letterSpacing: ls('0.2px'), opacity: '0.85' }, S.counterName || 'Reps'),
-      el('div', { width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }, editIcon(v.chrome))
-    );
-    root.append(bar);
-
-    // the tap surface
+  // The counting surface itself — number, button face, hint, tap layer and the
+  // Taptic overlay. Both live surfaces build from this one recipe: the hero
+  // wears it inside the full phone, the themes stage crops the screen to it.
+  function paintSurface(v, target) {
     var surface = el('div', { position: 'relative', zIndex: '4', flex: '1', minHeight: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' });
-    refs.surface = surface;
+    target.surface = surface;
 
     if (v.button !== 'none') {
       var face = el('div', { width: v.btnSize + 'px', height: v.btnSize + 'px', background: v.btnBg, borderRadius: v.btnRadius, boxShadow: v.btnShadow || 'none', border: v.btnBorder || 'none', transition: REDUCED ? 'none' : 'transform 0.09s ease' });
-      refs.face = face;
+      target.face = face;
       surface.append(el('div', { position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }, face));
-    } else { refs.face = null; }
+    } else { target.face = null; }
 
     var num = el('span', {
       fontFamily: v.numFont + ', ' + UI_FONT, fontWeight: v.numWeight, fontSize: v.numSize + 'px',
       color: v.num, letterSpacing: v.numSpacing, textShadow: v.numShadow, lineHeight: '1', display: 'inline-block',
       fontVariantNumeric: 'tabular-nums',
     }, String(state.count));
-    refs.num = num;
+    target.num = num;
 
     var hintText = HINTS[state.theme] || '';
     var hint = hintText
@@ -289,9 +331,60 @@
     tapBtn.type = 'button';
     tapBtn.setAttribute('aria-label', (S.tapLabel || 'Add one') + '. ' + (S.countLabel || 'Current count') + ' ' + state.count);
     Object.assign(tapBtn.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', background: 'transparent', border: '0', padding: '0', zIndex: '8', touchAction: 'pan-y', webkitTapHighlightColor: 'transparent', cursor: 'pointer', borderRadius: '0' });
-    refs.tapBtn = tapBtn;
+    target.tapBtn = tapBtn;
     surface.append(tapBtn, hapticOverlay());
-    root.append(surface);
+    return surface;
+  }
+
+  // The themes-band stage: the same screen, cropped to the part that counts, so
+  // picking a skin pays off under the reader's thumb instead of up at the hero.
+  function buildStage() {
+    if (!stage) return;
+    var v = THEMES[state.theme];
+    stageMount.textContent = '';
+    var logical = el('div', {
+      position: 'absolute', left: '0', top: '0', width: '440px', height: '420px',
+      transform: 'scale(var(--ts, 0.55))', transformOrigin: 'top left', overflow: 'hidden',
+      webkitUserSelect: 'none', userSelect: 'none', webkitTapHighlightColor: 'transparent',
+    });
+    var root = el('div', { position: 'absolute', inset: '0', background: v.bg, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' });
+    addDeco(v, root);
+    root.append(paintSurface(v, stage));
+    logical.append(root);
+    stageMount.append(logical);
+    stageMount.style.background = v.screenBg;
+    if (!REDUCED) logical.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+  }
+
+  function buildPhone() {
+    var v = THEMES[state.theme];
+    mount.textContent = '';
+
+    var frame = el('div', null); frame.className = 'phone__frame';
+    var screen = el('div', null); screen.className = 'phone__screen';
+    screen.style.background = v.screenBg;
+    var logical = el('div', null); logical.className = 'phone__logical';
+    logical.style.webkitTouchCallout = 'none';
+
+    var root = el('div', { position: 'absolute', inset: '0', background: v.bg, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' });
+    addDeco(v, root);
+
+    // iOS status bar, 11:11
+    var sColor = v.statusDark ? '#0A0A0A' : '#FFFFFF';
+    var sBar = el('div', { position: 'absolute', top: '0', left: '0', right: '0', height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 40px 0 46px', zIndex: '30', pointerEvents: 'none' });
+    sBar.append(el('div', { fontFamily: UI_FONT, fontWeight: '600', fontSize: '17px', letterSpacing: '0.2px', color: sColor }, '11:11'), statusBarSvg(sColor));
+    root.append(sBar);
+
+    // top bar: menu · name · edit
+    var bar = el('div', { position: 'relative', zIndex: '5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', height: '50px', marginTop: '58px' });
+    bar.append(
+      el('div', { width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }, menuIcon(v.chrome)),
+      el('div', { fontFamily: UI_FONT, fontSize: '15px', fontWeight: '600', color: v.chrome, letterSpacing: ls('0.2px'), opacity: '0.85' }, S.counterName || 'Reps'),
+      el('div', { width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }, editIcon(v.chrome))
+    );
+    root.append(bar);
+
+    root.append(paintSurface(v, refs));
 
     // Undo · Reset — real controls
     var pill = function (label, icon, handler, key) {
@@ -344,7 +437,7 @@
     });
     mount.append(snd);
 
-    applyDigitScale(false);
+    applyDigitScale(refs, false);
   }
 
   function drawSoundIcon() {
@@ -354,30 +447,36 @@
     refs.sound.append(svgEl(audio.muted ? off : on));
   }
 
-  function applyDigitScale(pop) {
+  function applyDigitScale(target, pop) {
     var base = digitScale(state.count);
     if (REDUCED || !pop) {
-      refs.num.style.transform = base === 1 ? 'none' : 'scale(' + base + ')';
+      target.num.style.transform = base === 1 ? 'none' : 'scale(' + base + ')';
       return;
     }
-    refs.num.animate(
+    target.num.animate(
       [{ transform: 'scale(' + base * 1.09 + ')' }, { transform: base === 1 ? 'scale(1)' : 'scale(' + base + ')' }],
       { duration: 190, easing: 'cubic-bezier(0.2, 0.8, 0.3, 1)' }
     );
-    refs.num.style.transform = base === 1 ? 'none' : 'scale(' + base + ')';
+    target.num.style.transform = base === 1 ? 'none' : 'scale(' + base + ')';
   }
 
   var announceTimer = null;
+  function paintCount(target, pop) {
+    if (!target || !target.num) return;
+    target.num.textContent = String(state.count);
+    applyDigitScale(target, pop);
+    target.tapBtn.setAttribute('aria-label', (S.tapLabel || 'Add one') + '. ' + (S.countLabel || 'Current count') + ' ' + state.count);
+  }
   function render(pop) {
-    refs.num.textContent = String(state.count);
-    applyDigitScale(pop);
-    refs.tapBtn.setAttribute('aria-label', (S.tapLabel || 'Add one') + '. ' + (S.countLabel || 'Current count') + ' ' + state.count);
+    // one count, two windows onto it — the hero phone and the themes stage
+    paintCount(refs, pop);
+    paintCount(stage, pop);
     if (announceTimer) clearTimeout(announceTimer);
     announceTimer = setTimeout(function () { live.textContent = (S.countLabel || 'Current count') + ' ' + state.count; }, 420);
   }
 
   // tap effects, in the app's own visual language
-  function spawnEffects(xPct, yPct, text) {
+  function spawnEffects(target, xPct, yPct, text) {
     if (REDUCED) return;
     var v = THEMES[state.theme];
     var mk = function (size, borderW, opacity) {
@@ -386,18 +485,18 @@
         marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px', borderRadius: '50%',
         border: borderW + 'px solid ' + v.accent, opacity: String(opacity), zIndex: '3', pointerEvents: 'none',
       });
-      refs.surface.append(d);
+      target.surface.append(d);
       d.animate([{ transform: 'scale(0.35)', opacity: opacity }, { transform: 'scale(1)', opacity: 0 }], { duration: 480, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' }).onfinish = function () { d.remove(); };
     };
     mk(268, 3, 0.34); mk(172, 4, 0.5);
     var dot = el('div', { position: 'absolute', left: xPct + '%', top: yPct + '%', width: '62px', height: '62px', marginLeft: '-31px', marginTop: '-31px', borderRadius: '50%', background: v.accent, opacity: '0.34', zIndex: '3', pointerEvents: 'none' });
-    refs.surface.append(dot);
+    target.surface.append(dot);
     dot.animate([{ opacity: 0.34 }, { opacity: 0 }], { duration: 340 }).onfinish = function () { dot.remove(); };
     // sparks
     for (var i = 0; i < 3; i++) {
       var sz = 10 + Math.round(Math.random() * 10);
       var sp = el('div', { position: 'absolute', left: xPct + '%', top: yPct + '%', width: sz + 'px', height: sz + 'px', borderRadius: '2px', background: v.accent, zIndex: '3', pointerEvents: 'none', transform: 'rotate(45deg)' });
-      refs.surface.append(sp);
+      target.surface.append(sp);
       var a = (i / 3) * Math.PI * 2 + Math.random();
       sp.animate(
         [{ transform: 'translate(0,0) rotate(45deg)', opacity: 0.9 }, { transform: 'translate(' + Math.cos(a) * 74 + 'px,' + (Math.sin(a) * 74 - 30) + 'px) rotate(140deg)', opacity: 0 }],
@@ -412,22 +511,22 @@
       letterSpacing: '-1px', boxShadow: '0 18px 40px -12px rgba(0,0,0,0.35)', whiteSpace: 'nowrap',
       transform: 'translate(-50%, -130%) rotate(-6deg)',
     }, text);
-    refs.surface.append(chip);
+    target.surface.append(chip);
     chip.animate(
       [{ transform: 'translate(-50%, -130%) rotate(-6deg)', opacity: 1 }, { transform: 'translate(-50%, -210%) rotate(-4deg)', opacity: 0 }],
       { duration: 620, easing: 'cubic-bezier(0.2, 0.6, 0.3, 1)' }
     ).onfinish = function () { chip.remove(); };
   }
 
-  function pressFace(down) {
-    if (!refs.face || REDUCED) return;
-    refs.face.style.transform = down ? (state.theme === 'cute' ? 'scale(1.06, 0.9)' : 'scale(0.95)') : 'none';
+  function pressFace(target, down) {
+    if (!target.face || REDUCED) return;
+    target.face.style.transform = down ? (state.theme === 'cute' ? 'scale(1.06, 0.9)' : 'scale(0.95)') : 'none';
   }
 
-  function addOne(xPct, yPct) {
+  function addOne(target, xPct, yPct) {
     state.count += 1;
     render(true);
-    spawnEffects(xPct, yPct, '+1');
+    spawnEffects(target, xPct, yPct, '+1');
     clickSound(THEMES[state.theme].click, 1);
     buzz();
   }
@@ -436,7 +535,7 @@
     if (state.count > 0) {
       state.count -= 1;
       render(true);
-      spawnEffects(50, 42, '−1');
+      spawnEffects(refs, 50, 42, '−1');
       clickSound(THEMES[state.theme].click, 0.7);
       buzz();
     }
@@ -455,6 +554,7 @@
   document.body.append(live);
 
   buildPhone();
+  buildStage();
   render(false);
 
   // A mouse counts on pointer-down, like the app. A FINGER counts on lift:
@@ -463,66 +563,81 @@
   // (count, then the pointercancel revert). Committing at up keeps scrolls
   // off the number entirely, and lines the count up with the iOS Taptic,
   // which the switch overlay plays at lift anyway.
-  var touchPointer = null;
-  var touchX = 0;
-  var touchY = 0;
-  function onSurface(ev) {
-    var r = refs.surface.getBoundingClientRect();
-    if (ev.clientY < r.top || ev.clientY > r.bottom || ev.clientX < r.left || ev.clientX > r.right) return null;
-    return r;
-  }
-  mount.addEventListener('pointerdown', function (ev) {
-    if (ev.target.closest('[data-live], .sound-chip')) return;
-    var r = onSurface(ev);
-    if (!r) return;
-    pressFace(true);
-    if (ev.pointerType === 'mouse') {
-      addOne(((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100);
-      return;
+  // Listeners ride the container, never the rebuilt children: a theme change
+  // replaces the whole tree, and target.* is read fresh on every event.
+  function wireTaps(container, target) {
+    var touchPointer = null;
+    var touchX = 0;
+    var touchY = 0;
+    function onSurface(ev) {
+      var r = target.surface.getBoundingClientRect();
+      if (ev.clientY < r.top || ev.clientY > r.bottom || ev.clientX < r.left || ev.clientX > r.right) return null;
+      return r;
     }
-    touchPointer = ev.pointerId;
-    touchX = ev.clientX;
-    touchY = ev.clientY;
-  });
-  mount.addEventListener('pointerup', function (ev) {
-    pressFace(false);
-    if (touchPointer === null || ev.pointerId !== touchPointer) return;
-    touchPointer = null;
-    if (Math.hypot(ev.clientX - touchX, ev.clientY - touchY) > 12) return;
-    var r = onSurface(ev);
-    if (r) addOne(((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100);
-  });
-  mount.addEventListener('pointerleave', function () { pressFace(false); });
-  mount.addEventListener('pointercancel', function () { touchPointer = null; pressFace(false); });
-  // keyboard activation of the tap layer (click with no pointer coords)
-  mount.addEventListener('click', function (ev) {
-    if (ev.target === refs.tapBtn && ev.detail === 0) addOne(50, 46);
-  });
+    container.addEventListener('pointerdown', function (ev) {
+      if (ev.target.closest('[data-live], .sound-chip')) return;
+      var r = onSurface(ev);
+      if (!r) return;
+      pressFace(target, true);
+      if (ev.pointerType === 'mouse') {
+        addOne(target, ((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100);
+        return;
+      }
+      touchPointer = ev.pointerId;
+      touchX = ev.clientX;
+      touchY = ev.clientY;
+    });
+    container.addEventListener('pointerup', function (ev) {
+      pressFace(target, false);
+      if (touchPointer === null || ev.pointerId !== touchPointer) return;
+      touchPointer = null;
+      if (Math.hypot(ev.clientX - touchX, ev.clientY - touchY) > 12) return;
+      var r = onSurface(ev);
+      if (r) addOne(target, ((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100);
+    });
+    container.addEventListener('pointerleave', function () { pressFace(target, false); });
+    container.addEventListener('pointercancel', function () { touchPointer = null; pressFace(target, false); });
+    // keyboard activation of the tap layer (click with no pointer coords)
+    container.addEventListener('click', function (ev) {
+      if (ev.target === target.tapBtn && ev.detail === 0) addOne(target, 50, 46);
+    });
+  }
+  wireTaps(mount, refs);
+  if (stage) wireTaps(stageMount, stage);
 
-  // fit the phone to its container
+  // fit each surface to its container
   if ('ResizeObserver' in window) {
     new ResizeObserver(function (entries) {
       var w = entries[0].contentRect.width;
       // cap: never above the design scale; never wider than the column
       if (w > 0) mount.style.setProperty('--s', Math.min(0.82, w / 492).toFixed(4));
     }).observe(mount.parentElement);
+    if (stage) new ResizeObserver(function (entries) {
+      var w = entries[0].contentRect.width;
+      if (w > 0) stageMount.style.setProperty('--ts', (w / 440).toFixed(4));
+    }).observe(stageMount);
   }
 
   // ── theme minis ──────────────────────────────────────────────────────────
   var minis = document.querySelectorAll('[data-minis] .mini');
   function markMini() {
-    minis.forEach(function (m) { m.classList.toggle('is-on', m.dataset.theme === state.theme); });
+    minis.forEach(function (m) {
+      var on = m.dataset.theme === state.theme;
+      m.classList.toggle('is-on', on);
+      m.setAttribute('aria-pressed', String(on));
+    });
   }
   minis.forEach(function (m) {
     m.addEventListener('click', function () {
       state.theme = m.dataset.theme;
       buildPhone();
+      // The stage stands right next to the tiles, so the skin lands where the
+      // reader is looking — picking a theme no longer yanks them to the hero.
+      buildStage();
       render(false);
       markMini();
       clickSound(THEMES[state.theme].click, 1);
       buzz();
-      var hero = document.querySelector('.hero');
-      if (hero) hero.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
     });
   });
   markMini();
@@ -539,9 +654,13 @@
         });
         clickSound(THEMES[state.theme].click, 1);
         buzz();
+        sonarPulse();
       });
-      addTapHaptic(b);
+      // No Taptic overlay here on purpose: iOS plays one fixed pattern for a
+      // switch toggle, so all three levels felt identical on an iPhone. The
+      // pulse shows what the phone cannot say; Android still buzzes for real.
     });
+    if (REDUCED) sonarPulse(); // the still ring for the default level
   }
 
   // ── multi cards: tap a plus to count that row ────────────────────────────
