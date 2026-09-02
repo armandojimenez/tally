@@ -215,6 +215,12 @@ h3 { font-size: 1.35rem; letter-spacing: -0.015em; }
 .intensity__opt.is-on { background: var(--tang); color: var(--ink); }
 .feel__note { color: var(--sand-300); font-size: 0.98rem; margin: 26px auto 0; max-width: 26em; }
 
+/* Marks — the P9 differentiator, called out inside the click band rather than
+   given a band of its own: it IS the click, carrying one more piece of
+   information. The rule on the leading edge marks it as a claim, not prose. */
+.feel__marks { border-inline-start: 3px solid var(--tang); padding-inline-start: 18px; margin-top: 22px; }
+.feel__marks strong { color: var(--tang-soft); font-weight: 700; }
+
 /* the sonar scope: intensity you can SEE. iOS plays one fixed Taptic pattern
    for a switch toggle, so Light/Medium/Heavy cannot differ by feel there —
    the pulse carries the difference instead (rings, reach and decay scale). */
